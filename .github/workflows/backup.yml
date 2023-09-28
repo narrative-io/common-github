@@ -1,0 +1,50 @@
+name: Backup to S3 (common)
+
+on:
+  workflow_call:
+    # inputs:
+    # Automatically passed by Github
+    # secrets:
+    #   GITHUB_TOKEN:
+    #     required: true
+
+env:
+  # In the absence of explicit configuration, `sun.jnu.encoding` gets set to `ANSI_X3.4-1968` which eventually causes
+  # `sbt assembly` to fail due to e.g. shapeless having special characters like `λ` in class names.
+  # See https://app.shortcut.com/narrativeio/story/19136
+  LC_ALL: en_US.UTF-8
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  AWS_REGION: us-east-1
+
+jobs:
+  s3-backup:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        id: configure-aws-credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: 'arn:aws:iam::704349335716:role/nio-github-action-runner'
+      - name: Get current date
+        uses: josStorer/get-current-time@v2
+        id: get-current-date
+        with:
+          format: YYYY-MM-DD
+          timzeone: UTC
+      - name: S3 Backup
+        uses: peter-evans/s3-backup@v1
+        env:
+          # All these outputs are supposed to be exposed, but when you run the configure-aws-credentials
+          # action with additional debug, the only output that is actually exposed is aws-account-id
+          # https://github.com/aws-actions/configure-aws-credentials/blob/main/action.yml
+          # ACCESS_KEY_ID: ${{ steps.configure-aws-credentials.outputs.aws-access-key-id }}
+          # SECRET_ACCESS_KEY: ${{ steps.configure-aws-credentials.outputs.aws-secret-access-key }}
+          # AWS_SESSION_TOKEN: ${{ steps.configure-aws-credentials.outputs.aws-session-token }}
+          ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          # AWS_REGION already set
+          MIRROR_TARGET: narrative-backups-prod/github/${{ github.event.repository.name }}/${{ steps.get-current-date.outputs.formattedTime }}
+        with:
+          args: --overwrite --remove
