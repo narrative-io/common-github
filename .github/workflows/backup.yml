@@ -32,7 +32,7 @@ jobs:
         id: get-current-date
         with:
           format: YYYY-MM-DD
-          timzeone: UTC
+          timezone: UTC
       - name: S3 Backup
         uses: peter-evans/s3-backup@v1
         env:
