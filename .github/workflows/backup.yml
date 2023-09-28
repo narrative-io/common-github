@@ -33,7 +33,7 @@ jobs:
         with:
           format: YYYY-MM-DD
           timezone: UTC
-      - name: S3 Backup
+      - name: S3 Backup (${{ steps.get-current-date.outputs.formattedTime }})
         uses: peter-evans/s3-backup@v1
         env:
           # All these outputs are supposed to be exposed, but when you run the configure-aws-credentials
