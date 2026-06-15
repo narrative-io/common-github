@@ -20,21 +20,21 @@ jobs:
   s3-backup:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: Configure AWS credentials
         id: configure-aws-credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: 'arn:aws:iam::704349335716:role/nio-github-action-runner'
       - name: Get current date
-        uses: josStorer/get-current-time@v2
+        uses: josStorer/get-current-time@993dd4abdf0ad0313c6aef3b86b98f3d5e8e4e80 # v2
         id: get-current-date
         with:
           format: YYYY-MM-DD
           timezone: UTC
       - name: S3 Backup (${{ steps.get-current-date.outputs.formattedTime }})
-        uses: peter-evans/s3-backup@v1
+        uses: peter-evans/s3-backup@59efd330705d92805a44894668b6cf5c10dc740e # v1
         env:
           # All these outputs are supposed to be exposed, but when you run the configure-aws-credentials
           # action with additional debug, the only output that is actually exposed is aws-account-id
