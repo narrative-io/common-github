@@ -1,6 +1,4 @@
 # Keeps the SHA-pinned actions in .github/workflows fresh.
-# The 7-day cooldown means we don't adopt a new upstream release the hour it
-# ships — protection against compromised releases (see sc-62809 / epic 62788).
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -8,4 +6,4 @@ updates:
     schedule:
       interval: weekly
     cooldown:
-      default-days: 7
+      default-days: 14
