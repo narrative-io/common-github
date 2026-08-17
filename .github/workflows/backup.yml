@@ -13,14 +13,22 @@ env:
   # `sbt assembly` to fail due to e.g. shapeless having special characters like `λ` in class names.
   # See https://app.shortcut.com/narrativeio/story/19136
   LC_ALL: en_US.UTF-8
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # `github.token` rather than `secrets.GITHUB_TOKEN`: the context form resolves in a
+  # called workflow without the caller passing anything, so callers do not need
+  # `secrets: inherit` (see secrets-inherit remediation in backup-daily.yml).
+  GITHUB_TOKEN: ${{ github.token }}
   AWS_REGION: us-east-1
 
 jobs:
   s3-backup:
     runs-on: self-hosted
     steps:
+      # persist-credentials: false is load-bearing here, not just lint compliance: the
+      # s3-backup step below mirrors the whole workspace (including .git/) to S3, so a
+      # persisted token would be written into .git/config in the backup bucket.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Configure AWS credentials
         id: configure-aws-credentials
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
