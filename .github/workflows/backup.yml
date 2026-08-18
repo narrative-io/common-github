@@ -26,12 +26,12 @@ jobs:
       # persist-credentials: false is load-bearing here, not just lint compliance: the
       # s3-backup step below mirrors the whole workspace (including .git/) to S3, so a
       # persisted token would be written into .git/config in the backup bucket.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Configure AWS credentials
         id: configure-aws-credentials
-        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: 'arn:aws:iam::704349335716:role/nio-github-action-runner'
