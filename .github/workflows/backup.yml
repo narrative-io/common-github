@@ -41,18 +41,24 @@ jobs:
         with:
           format: YYYY-MM-DD
           timezone: UTC
+      # This step was peter-evans/s3-backup, a Docker action built FROM a 2022
+      # minio/mc tag. Around 2026-09-12 Docker Hub stopped serving that tag to
+      # anonymous pulls, so the self-hosted runner's image build started failing and
+      # every backup since has died before this step ran at all. The AWS CLI is
+      # already installed on these runners and already reads the credentials the
+      # step above exports, so `aws s3 sync` does the same work with no image to
+      # pull and no third-party action in the path.
+      #
+      # `--delete` is the old `--remove`. The old `--overwrite` has no counterpart:
+      # sync replaces anything whose size or mtime differs, and the target prefix is
+      # date-stamped, so each run writes into an empty prefix anyway.
       - name: S3 Backup (${{ steps.get-current-date.outputs.formattedTime }})
-        uses: peter-evans/s3-backup@59efd330705d92805a44894668b6cf5c10dc740e # v1.1.1
         env:
-          # All these outputs are supposed to be exposed, but when you run the configure-aws-credentials
-          # action with additional debug, the only output that is actually exposed is aws-account-id
-          # https://github.com/aws-actions/configure-aws-credentials/blob/main/action.yml
-          # ACCESS_KEY_ID: ${{ steps.configure-aws-credentials.outputs.aws-access-key-id }}
-          # SECRET_ACCESS_KEY: ${{ steps.configure-aws-credentials.outputs.aws-secret-access-key }}
-          # AWS_SESSION_TOKEN: ${{ steps.configure-aws-credentials.outputs.aws-session-token }}
-          ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          # AWS_REGION already set
-          MIRROR_TARGET: narrative-backups-prod/github/${{ github.event.repository.name }}/${{ steps.get-current-date.outputs.formattedTime }}
-        with:
-          args: --overwrite --remove
+          # Interpolated into env rather than into the run block, which is what
+          # zizmor's template-injection rule asks for.
+          BACKUP_TARGET: s3://narrative-backups-prod/github/${{ github.event.repository.name }}/${{ steps.get-current-date.outputs.formattedTime }}
+        run: |
+          aws s3 sync . "$BACKUP_TARGET" --delete --no-progress
+          # An object count in the log is what makes "this backup actually wrote
+          # something" checkable from the run alone, with no AWS credential.
+          aws s3 ls --recursive --summarize "$BACKUP_TARGET/" | tail -n 2
