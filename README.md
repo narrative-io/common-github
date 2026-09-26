@@ -3,12 +3,17 @@ Common Github workflows and actions
 
 **Warning** This repository is public since our public repositories need to access these common actions and workflows. No sensitive information should be committed to this repo.
 
+The shared S3 backup workflow (`backup.yml`, and the `backup-daily.yml` that called it) has been removed.
+Every repository is now backed up centrally by
+[`narrative-security`'s `github-backup.yml`](https://github.com/narrative-io/narrative-security/blob/main/.github/workflows/github-backup.yml)
+(sc-73208), so repositories no longer need a backup workflow of their own.
+
 ## Releases
 
 Consumers pin the reusable workflows here to a full commit SHA with the version in a trailing comment:
 
 ```yaml
-uses: narrative-io/common-github/.github/workflows/backup.yml@<full-40-char-sha> # v1.0.0
+uses: narrative-io/common-github/.github/workflows/<workflow>.yml@<full-40-char-sha> # v1.0.0
 ```
 
 Tags exist so Dependabot maps each pinned SHA to a version and only bumps consumers when a new version is released (without tags it bumps on every commit to `main`).
