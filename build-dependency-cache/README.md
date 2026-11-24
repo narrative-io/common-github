@@ -91,6 +91,11 @@ build or `uv sync` has fetched everything, as `actions/cache` does. Composite ac
 every workflow would need a second step, placed last, to save. Their scripts only start `s3_cache.py`, through
 `s3-cache.js`.
 
+The save then runs after the post steps of any action placed below the cache step. `configure-aws-credentials` sets
+`AWS_REGION` and `AWS_DEFAULT_REGION` to empty strings in its post step, and the aws CLI takes an empty region as the
+region, so the restore keeps the region it ran with in the step's state and the save takes it back. The credentials
+that post step blanks don't matter: the CLI skips them and uses the runner's instance role, as the restore did.
+
 `setup-mise` has to be composite to call `jdx/mise-action`, and saves right after the install instead: mise's folder is
 complete then, a job that fails later still saves it, and later steps can't add to it. Saving at the end would let the
 job's real work start a few seconds sooner on the pushes that save; its save step's comment explains the trade-off.

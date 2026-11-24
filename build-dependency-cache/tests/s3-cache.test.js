@@ -72,3 +72,57 @@ test("saveIfAsked runs a save only when asked, on main", () => {
   assert.deepEqual(saved.calls[0].args.slice(1), ["save", "--kind", "sbt"]);
   assert.equal(saved.calls[0].env.S3_CACHE_SCOPE, "agg");
 });
+
+// Records each append to a file.
+function fakeAppend() {
+  const writes = [];
+  return { writes, append: (file, text) => writes.push({ file, text }) };
+}
+
+test("a restore keeps the region it ran with in the step's state", () => {
+  const { writes, append } = fakeAppend();
+  const env = { GITHUB_STATE: "/state", AWS_REGION: "us-east-1", AWS_DEFAULT_REGION: "us-east-1" };
+  run("sbt", "restore", "", { env, spawn: fakeSpawn({ status: 0 }).spawn, log: () => {}, append });
+  assert.deepEqual(writes, [{ file: "/state", text: "AWS_REGION=us-east-1\nAWS_DEFAULT_REGION=us-east-1\n" }]);
+});
+
+test("a restore without a region keeps nothing", () => {
+  const { writes, append } = fakeAppend();
+  run("sbt", "restore", "", { env: { GITHUB_STATE: "/state" }, spawn: fakeSpawn({ status: 0 }).spawn, append });
+  assert.deepEqual(writes, []);
+});
+
+test("a restore that can't keep the region warns and still restores", () => {
+  const lines = [];
+  const { calls, spawn } = fakeSpawn({ status: 0 });
+  const append = () => {
+    throw new Error("EACCES");
+  };
+  const env = { GITHUB_STATE: "/state", AWS_REGION: "us-east-1" };
+  assert.equal(run("sbt", "restore", "", { env, spawn, log: (line) => lines.push(line), append }), 0);
+  assert.equal(calls.length, 1);
+  assert.match(lines[0], /^::warning::couldn't keep the AWS region for the save: EACCES$/);
+});
+
+test("a save gets back the region configure-aws-credentials blanked", () => {
+  const { calls, spawn } = fakeSpawn({ status: 0 });
+  const env = {
+    ...MAIN,
+    INPUT_SAVE: "true",
+    AWS_REGION: "",
+    AWS_DEFAULT_REGION: "",
+    STATE_AWS_REGION: "us-east-1",
+    STATE_AWS_DEFAULT_REGION: "us-east-1",
+  };
+  saveIfAsked("sbt", "", { env, spawn });
+  assert.equal(calls[0].env.AWS_REGION, "us-east-1");
+  assert.equal(calls[0].env.AWS_DEFAULT_REGION, "us-east-1");
+});
+
+test("a save keeps a region that's still set", () => {
+  const { calls, spawn } = fakeSpawn({ status: 0 });
+  const env = { ...MAIN, INPUT_SAVE: "true", AWS_REGION: "eu-west-1", STATE_AWS_REGION: "us-east-1" };
+  saveIfAsked("sbt", "", { env, spawn });
+  assert.equal(calls[0].env.AWS_REGION, "eu-west-1");
+  assert.equal(calls[0].env.AWS_DEFAULT_REGION, undefined);
+});
