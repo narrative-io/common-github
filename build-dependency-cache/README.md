@@ -93,7 +93,8 @@ every workflow would need a second step, placed last, to save. Their scripts onl
 
 The save then runs after the post steps of any action placed below the cache step. `configure-aws-credentials` sets
 `AWS_REGION` and `AWS_DEFAULT_REGION` to empty strings in its post step, and the aws CLI takes an empty region as the
-region, so the restore keeps the region it ran with in the step's state and the save takes it back. The credentials
+region, so the restore keeps the region it ran with in the step's state, and the save takes it back, or unsets the
+variables when the restore ran without a region (a job that configures credentials only after the cache step). The credentials
 that post step blanks don't matter: the CLI skips them and uses the runner's instance role, as the restore did.
 
 `setup-mise` has to be composite to call `jdx/mise-action`, and saves right after the install instead: mise's folder is

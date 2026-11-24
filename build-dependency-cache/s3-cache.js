@@ -46,13 +46,16 @@ function rememberRegion(env, append, log) {
   }
 }
 
-// env, with each region variable that's now empty set back to the value the restore ran with.
+// env, with each region variable that's now empty as the restore saw it: set back to the value it had then, or
+// unset when it had none. A job that configures AWS credentials only after the cache step restores with no region,
+// which the CLI resolves itself; the cleanup then turns that into "", which it can't.
 function withRestoredRegion(env) {
-  const restored = REGION_VARIABLES.filter((name) => !env[name] && env[`STATE_${name}`]).map((name) => [
-    name,
-    env[`STATE_${name}`],
-  ]);
-  return { ...env, ...Object.fromEntries(restored) };
+  const restored = { ...env };
+  for (const name of REGION_VARIABLES.filter((name) => !env[name])) {
+    if (env[`STATE_${name}`]) restored[name] = env[`STATE_${name}`];
+    else delete restored[name];
+  }
+  return restored;
 }
 
 // Runs s3_cache.py and returns the step's exit status. scope is the folder that keeps the job's archives apart: an
