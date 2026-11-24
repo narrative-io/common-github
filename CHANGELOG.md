@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/narrative-io/common-github/compare/v1.1.1...v1.2.0) (2026-11-24)
+
+
+### Features
+
+* **build-dependency-cache:** share the S3 cache actions for sbt, mise and uv (SC-88184) ([#20](https://github.com/narrative-io/common-github/issues/20)) ([20c4303](https://github.com/narrative-io/common-github/commit/20c430331669fec9260a967fb2de0a3546c7fe99))
+
 ## [1.1.1](https://github.com/narrative-io/common-github/compare/v1.1.0...v1.1.1) (2026-08-18)
 
 
