@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/narrative-io/common-github/compare/v1.2.0...v1.2.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **build-dependency-cache:** save with the region the restore ran with (SC-88184) ([#22](https://github.com/narrative-io/common-github/issues/22)) ([602f352](https://github.com/narrative-io/common-github/commit/602f352f8bd94aae9c593b9d37f97aa74ad53224))
+
 ## [1.2.0](https://github.com/narrative-io/common-github/compare/v1.1.1...v1.2.0) (2026-11-24)
 
 
