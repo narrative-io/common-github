@@ -1,0 +1,36 @@
+name: Cache uv's packages
+description: >
+  Restore uv's cache, the packages a project's `uv sync` downloads, from S3 when the step runs, and save it
+  when the job ends, through ../s3_cache.py. Each project keeps its own archive, keyed on its uv.lock.
+
+  Put the step before the project's first `uv sync`. It saves from its post step, after every other step of
+  the job has passed, only in a job that passes save as true, and only on a push to main.
+
+  If a restore or save fails, the step logs a warning and the job carries on; uv then downloads what it
+  needs. Callers keep a kill switch of their own, as a repository variable checked in the step's if; a
+  skipped step skips the save too, since a post step only runs when its main step ran.
+
+inputs:
+  working_directory:
+    description: >
+      The project's folder, the one holding its uv.lock, relative to the repository root. Empty for a project
+      at the root.
+    default: ""
+  save:
+    description: >
+      "true" in the job that syncs everything the project locks, such as its tests. A job that syncs less,
+      with --no-dev say, could otherwise finish first and save a thin archive under the project's key.
+    default: "false"
+  url:
+    description: >
+      Base S3 URL, s3://<bucket>/<prefix>; callers pass the organization variable
+      COMMON_GITHUB_BUILD_DEPENDENCY_CACHE. The repository name, project and key go under it. The runners need
+      read and write there. Empty fails the step.
+    required: true
+
+# A JavaScript action rather than a composite one, for the post step, as cache-sbt; ../s3-cache.js explains.
+runs:
+  using: node24
+  main: restore.js
+  post: save.js
+  post-if: success()

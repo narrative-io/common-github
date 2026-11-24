@@ -1,0 +1,8 @@
+[tools]
+# What build-dependency-cache's tests need beyond the Python its own mise.toml pins: uv to run them, node for its
+# JavaScript tests. The same versions as narrative-marketplace-backend's root mise.toml.
+node = "24.19.0"
+uv = "0.13.7"
+
+[settings]
+lockfile = true

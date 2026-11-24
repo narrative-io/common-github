@@ -1,0 +1,40 @@
+name: Cache sbt's dependencies
+description: >
+  Restore the coursier, ivy and sbt launcher caches from S3 when the step runs, and save them when the job
+  ends, through ../s3_cache.py.
+
+  Put the step before anything that runs sbt, or writes into sbt's global directory. It saves from its post
+  step, after every other step of the job has passed, only in a job that passes save as true, and only on a
+  push to main.
+
+  If a restore or save fails, the step logs a warning and the job carries on; sbt then downloads what it
+  needs. Callers keep a kill switch of their own, as a repository variable checked in the step's if; a
+  skipped step skips the save too, since a post step only runs when its main step ran.
+
+inputs:
+  scope:
+    description: >
+      Optional path under the repository, for jobs that resolve different dependencies (an aggregate, a
+      separate build) and should keep separate archives. Jobs with the same scope share one.
+    default: ""
+  save:
+    description: >
+      "true" in the job whose dependencies the archive should hold, such as `sbt test`, which resolves
+      everything a build needs. Other jobs only restore: one that resolves less, such as scalafmt, could
+      otherwise finish first and save a thin archive under the key every job shares.
+    default: "false"
+  url:
+    description: >
+      Base S3 URL, s3://<bucket>/<prefix>; callers pass the organization variable
+      COMMON_GITHUB_BUILD_DEPENDENCY_CACHE. The repository name, scope and key go under it. The runners need
+      read and write there. Empty fails the step.
+    required: true
+
+# A JavaScript action rather than a composite one: only JavaScript and Docker actions get a post step, which
+# saves when the job ends, as actions/cache does, so a workflow needs one step instead of a restore and a save.
+# Both scripts start ../s3_cache.py through ../s3-cache.js, so the archive logic stays in one place.
+runs:
+  using: node24
+  main: restore.js
+  post: save.js
+  post-if: success()
