@@ -119,6 +119,14 @@ test("a save gets back the region configure-aws-credentials blanked", () => {
   assert.equal(calls[0].env.AWS_DEFAULT_REGION, "us-east-1");
 });
 
+test("a save unsets a region that was unset when the restore ran", () => {
+  const { calls, spawn } = fakeSpawn({ status: 0 });
+  const env = { ...MAIN, INPUT_SAVE: "true", AWS_REGION: "", AWS_DEFAULT_REGION: "" };
+  saveIfAsked("sbt", "", { env, spawn });
+  assert.equal("AWS_REGION" in calls[0].env, false);
+  assert.equal("AWS_DEFAULT_REGION" in calls[0].env, false);
+});
+
 test("a save keeps a region that's still set", () => {
   const { calls, spawn } = fakeSpawn({ status: 0 });
   const env = { ...MAIN, INPUT_SAVE: "true", AWS_REGION: "eu-west-1", STATE_AWS_REGION: "us-east-1" };
