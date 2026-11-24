@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/narrative-io/common-github/compare/v1.2.1...v1.2.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* **build-dependency-cache:** unset an empty region the restore ran without (SC-88184) ([#24](https://github.com/narrative-io/common-github/issues/24)) ([86abe13](https://github.com/narrative-io/common-github/commit/86abe1388443309ebf1eabd567c8c1a76a636f3e))
+
 ## [1.2.1](https://github.com/narrative-io/common-github/compare/v1.2.0...v1.2.1) (2026-11-24)
 
 
