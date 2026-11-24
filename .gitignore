@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+# Where the VS Code mise extension links the tools a folder's mise.toml pins.
+.vscode/mise-tools/

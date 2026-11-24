@@ -8,11 +8,17 @@ Every repository is now backed up centrally by
 [`narrative-security`'s `github-backup.yml`](https://github.com/narrative-io/narrative-security/blob/main/.github/workflows/github-backup.yml)
 (sc-73208), so repositories no longer need a backup workflow of their own.
 
+## Contents
+
+- [`build-dependency-cache/`](build-dependency-cache/README.md): actions that keep CI's sbt dependencies, mise tools
+  and uv packages in S3 instead of GitHub's cache: `cache-sbt`, `setup-mise` and `cache-uv`.
+
 ## Releases
 
-Consumers pin the reusable workflows here to a full commit SHA with the version in a trailing comment:
+Consumers pin the actions and reusable workflows here to a full commit SHA with the version in a trailing comment:
 
 ```yaml
+uses: narrative-io/common-github/build-dependency-cache/cache-sbt@<full-40-char-sha> # v1.2.0
 uses: narrative-io/common-github/.github/workflows/<workflow>.yml@<full-40-char-sha> # v1.0.0
 ```
 

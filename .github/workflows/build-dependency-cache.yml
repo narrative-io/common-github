@@ -1,0 +1,55 @@
+name: build-dependency-cache
+
+# Tests build-dependency-cache, so a change can be tested before consumers pin it: s3_cache.py with pytest, ruff and
+# ty, and s3-cache.js, which its JavaScript actions run, with node's test runner. ubuntu-latest has GNU tar and zstd,
+# as the self-hosted runners do, so the one test a laptop skips runs here.
+on:
+  pull_request:
+    paths:
+      - build-dependency-cache/**
+      - ruff.toml
+      - mise.toml
+      - .github/workflows/build-dependency-cache.yml
+  push:
+    branches: [main]
+    paths:
+      - build-dependency-cache/**
+      - ruff.toml
+      - mise.toml
+      - .github/workflows/build-dependency-cache.yml
+
+permissions: {}
+
+defaults:
+  run:
+    working-directory: build-dependency-cache
+
+jobs:
+  test:
+    name: Test build-dependency-cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # python from the folder's mise.toml, uv and node from the root's. Not setup-mise, which needs the S3 bucket
+      # that only the self-hosted runners reach.
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          version: 2026.11.10
+          working_directory: build-dependency-cache
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Run the Python tests
+        run: uv run --frozen pytest -rs
+      - name: Run the JavaScript tests
+        run: node --test tests/s3-cache.test.js
+      - name: Lint
+        run: uv run --frozen ruff check .
+      - name: Check formatting
+        run: uv run --frozen ruff format --check .
+      - name: Type-check
+        run: uv run --frozen ty check

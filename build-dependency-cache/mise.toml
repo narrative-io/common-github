@@ -1,0 +1,22 @@
+[tools]
+# The actions start s3_cache.py with the runner's own python3: 3.11 or newer, by runner. This pins the oldest, so ty
+# and the tests check the script against what every runner has. Keep equal to `requires-python` in pyproject.toml; uv
+# resolves against that, mise installs this, and nothing checks that the two agree.
+python = "3.11.18"
+
+[env]
+# Same uv integration as narrative-marketplace-backend's marketplace-api; its mise.toml explains each setting.
+UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
+UV_PYTHON_DOWNLOADS = "never"
+UV_PYTHON_PREFERENCE = "only-system"
+
+[deps.uv]
+# Runs `uv sync` before `mise run` and `mise x` whenever pyproject.toml or uv.lock has moved.
+auto = true
+
+[settings]
+# Required by [deps.uv] above.
+experimental = true
+lockfile = true
+# [deps.uv] creates .venv; mise only activates it.
+python.uv_venv_auto = "source"

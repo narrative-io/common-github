@@ -1,0 +1,27 @@
+# A copy of narrative-marketplace-backend's ruff.toml, the lint rules its Python style guide relies on, so that
+# build-dependency-cache, which moved here from there, keeps the same rules. Change them there first, then here.
+[lint]
+extend-select = [
+  "ANN",    # annotate every parameter and return type, and don't use Any
+  "B",      # likely bugs, such as a mutable default argument or a raise that drops its cause
+  "C4",     # build collections with comprehensions
+  "DTZ",    # no naive datetime
+  "ERA",    # no commented-out code
+  "FBT",    # a boolean parameter is keyword-only
+  "I",      # sorted imports
+  "PERF",   # no loop that appends to an empty list, and other slow idioms
+  "PGH",    # no blanket type: ignore or noqa
+  "PIE",    # no unnecessary pass, placeholder or duplicate
+  "PT",     # pytest style
+  "RUF012", # no mutable default on a class attribute
+  "RUF013", # no implicit Optional
+  "RUF100", # no unused noqa
+  "TID251", # the banned APIs below
+  "UP",     # the syntax of the Python the project runs
+]
+
+# Tests pass a fake in rather than patching a dependency. Banning the fixture's type bans the fixture: ANN makes every
+# test that takes `monkeypatch` annotate it.
+[lint.flake8-tidy-imports.banned-api]
+"unittest.mock".msg = "Pass a fake in instead of mocking."
+"pytest.MonkeyPatch".msg = "Pass the dependency in instead of patching it."

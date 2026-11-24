@@ -1,0 +1,24 @@
+[project]
+name = "build-dependency-cache"
+version = "0.1.0"
+description = "s3_cache.py, the engine of the cache-sbt, setup-mise and cache-uv actions, and its tests."
+# The actions start s3_cache.py with the runner's own python3, so it uses only the standard library of the oldest
+# Python a runner has. Keep equal to the python mise.toml pins.
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest>=9.1.1,<10.0.0",
+  "pytest-randomly>=4.1.0,<5.0.0",
+  "ruff==0.17.4",
+  "ty==0.0.107",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+extend = "../ruff.toml"
+line-length = 120

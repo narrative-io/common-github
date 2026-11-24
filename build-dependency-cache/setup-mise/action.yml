@@ -1,0 +1,83 @@
+name: Set up mise
+description: >
+  jdx/mise-action, with mise's data directory (the mise binary, and the tools and plugins it installs) kept in
+  S3 instead of GitHub's cache. Self-hosted runners in a private subnet reach GitHub's cache, which is Azure
+  storage, through their NAT gateway, and mise-action restored about 0.7 GB from it on every job; S3 in the
+  runners' region is reached through a free gateway endpoint. On a hit, mise-action finds the pinned binary and
+  every tool already installed, and downloads nothing but mise's signed checksums. On a miss, mise downloads
+  from GitHub releases, and a push to main saves the result.
+
+  Use it in place of jdx/mise-action in any job that installs tools. A job that passes `install: false` gets
+  its tools elsewhere, so it keeps jdx/mise-action with `cache: false`.
+
+  A composite action can't read repository variables, so callers pass their kill switch in as s3_cache, such
+  as the expression `vars.MISE_TOOLS_CACHE != 'off'`. With it off, mise downloads everything on every job; it
+  never falls back to GitHub's cache. (GitHub evaluates expressions even in this file's descriptions, so none
+  of them may contain one.)
+
+inputs:
+  version:
+    description: The mise version, as jdx/mise-action takes it.
+    required: true
+  install_args:
+    description: What `mise install` installs, as jdx/mise-action takes it. Empty installs everything the config pins.
+    default: ""
+  working_directory:
+    description: >
+      The directory mise runs in, as jdx/mise-action takes it. Its mise config pins the tools, so jobs in
+      different directories keep separate archives.
+    default: ""
+  s3_cache:
+    description: Whether to restore and save from S3, as "true" or "false"; the caller's kill switch.
+    required: true
+  url:
+    description: >
+      Base S3 URL, s3://<bucket>/<prefix>; callers pass the organization variable
+      COMMON_GITHUB_BUILD_DEPENDENCY_CACHE. The repository name and key go under it. The runners need read and
+      write there. Empty fails the step.
+    required: true
+
+# The cache steps run ../s3_cache.py themselves rather than through another action: an action in a shared
+# repository can only reach a sibling action with `uses: <this repository>/<path>@<commit>`, and a commit can't
+# name itself. ./<path> would point into the caller's checkout instead.
+runs:
+  using: composite
+  steps:
+    - name: Restore the mise tools cache
+      if: inputs.s3_cache == 'true'
+      shell: bash
+      env:
+        S3_CACHE_URL: ${{ inputs.url }}
+        S3_CACHE_TOOLS: ${{ inputs.version }} ${{ inputs.working_directory }} ${{ inputs.install_args }}
+      run: python3 "$GITHUB_ACTION_PATH/../s3_cache.py" restore --kind mise
+    - name: Set up mise
+      uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+      with:
+        version: ${{ inputs.version }}
+        install_args: ${{ inputs.install_args }}
+        working_directory: ${{ inputs.working_directory }}
+        cache: false
+    # A new archive starts from the one it restored, so without this it keeps every tool version the pins ever
+    # named: a JDK bump would leave both JDKs in it. prune deletes the versions that no config this runner
+    # loaded still selects. mise-action loaded this job's, root and working_directory, so its tools stay.
+    # Only before a save, so pull requests leave the runner as they found it.
+    - name: Prune tool versions nothing pins
+      if: inputs.s3_cache == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      shell: bash
+      run: mise prune --yes --tools || echo "::warning::mise prune failed, so the saved archive keeps unused versions"
+    # Right after the install, not at the end of the job as cache-sbt saves, which is a trade-off. Saving at the
+    # end, from a post step, would let the job's real work start sooner: packing and uploading the ~0.7 GB archive
+    # takes seconds. We save first instead, because:
+    # - the data directory is complete now, and a later step (a `mise install`, a task) could add tools to it;
+    # - a job that fails later still saves the tools it installed, so the next runs don't download them again;
+    # - the archive is in S3 sooner, for the runs that start meanwhile.
+    # The cost is only paid on a push to main that brings a key with no archive yet (after a change to a mise
+    # config or install_args); otherwise the save is one existence check, and pull requests skip it. A post step
+    # would also need a JavaScript helper action: this one has to be composite to call mise-action.
+    - name: Save the mise tools cache
+      if: inputs.s3_cache == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      shell: bash
+      env:
+        S3_CACHE_URL: ${{ inputs.url }}
+        S3_CACHE_TOOLS: ${{ inputs.version }} ${{ inputs.working_directory }} ${{ inputs.install_args }}
+      run: python3 "$GITHUB_ACTION_PATH/../s3_cache.py" save --kind mise

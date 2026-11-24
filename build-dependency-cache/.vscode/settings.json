@@ -1,0 +1,20 @@
+{
+    // The mise extension links the tools this folder's mise.toml (and the repository root's) pins into
+    // .vscode/mise-tools/: ty and ruff at the versions CI runs. [deps.uv] in mise.toml keeps .venv in sync, and ty
+    // finds it there, so imports resolve when this folder is opened on its own or through python.code-workspace.
+    "mise.configureExtensionsAutomatically": true,
+    "mise.configureExtensionsUseSymLinks": true,
+    "mise.configureExtensionsIncludeGlobalTools": false,
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    // ty is the language server: Pylance would report the same code again, by other rules.
+    "python.languageServer": "None",
+    "ty.path": [
+        "${workspaceFolder}/.vscode/mise-tools/ty"
+    ],
+    "ruff.path": [
+        "${workspaceFolder}/.vscode/mise-tools/ruff"
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    }
+}
